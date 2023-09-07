@@ -1,0 +1,77 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "input_dataset",
+						"type": "DatasetReference"
+					},
+					"name": "moviedatasource"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "output_datset",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "filteryear"
+				},
+				{
+					"name": "filtergenere"
+				},
+				{
+					"name": "filterrating"
+				},
+				{
+					"name": "select1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          Film as string,",
+				"          Genre as string,",
+				"          {Lead Studio} as string,",
+				"          {Audience score %} as string,",
+				"          Profitability as string,",
+				"          {Rotten Tomatoes %} as string,",
+				"          {Worldwide Gross} as string,",
+				"          Year as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> moviedatasource",
+				"filtergenere filter(toInteger(Year) >= 1910 && toInteger(Year) <= 2008) ~> filteryear",
+				"moviedatasource filter(in(array(\"Romance\",\"Comedy\"),Genre)) ~> filtergenere",
+				"filteryear filter(toFloat({Rotten Tomatoes %} )>= 75) ~> filterrating",
+				"filterrating select(mapColumn(",
+				"          Film,",
+				"          Genre,",
+				"          {Lead Studio},",
+				"          {Audience score %},",
+				"          Profitability,",
+				"          {Rotten Tomatoes %},",
+				"          {Worldwide Gross},",
+				"          Year",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink1"
+			]
+		}
+	}
+}
